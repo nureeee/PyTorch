@@ -1,0 +1,29 @@
+from ... import MyModel, Mytokenizer
+import torch
+import time
+start_t = time.time()
+device = 'cuda' if torch.cuda.is_available() else 'cuda'
+
+cpu = torch.device('cpu')
+# if torch.cuda.is_available():
+#     x_gpu = x.to(gpu)
+#     print(x_gpu)
+
+model = MyModel("/PATH").to(device)
+tokenizer = Mytokenizer("/PATH")
+
+def m2m_model(src_lang, tgt_lang, input_text):
+    tokenizer.src_lang = src_lang    
+    # jo = tokenizer(input_text, return_tensors="pt")
+    jo = {}
+    a = tokenizer(input_text, return_tensors="pt")['input_ids']
+    b = tokenizer(input_text, return_tensors="pt")['attention_mask']
+    jo['input_ids'] = a.to(device)
+    jo['attention_mask'] = b.to(device)
+    print("--- %s seconds ---" % (time.time() - start_t))
+    generated_tokens = model.generate(**jo, forced_bos_token_id=tokenizer.get_lang_id(tgt_lang)).to(device)
+    translated = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+    return translated[0]
+
+print(Mymodel('ko', 'en', '안녕'))
+print("--- %s seconds ---" % (time.time() - start_t))
